@@ -24,6 +24,7 @@
 .scope-zoom{display:flex;align-items:center;gap:8px;margin:10px 1px 0;font:10px var(--mono);color:var(--muted)}
 .scope-zoom input{flex:1;min-width:32px;height:4px;margin:5px 0}
 .scope-note{font-size:10px;line-height:1.4;color:var(--muted);margin-top:4px}
+.loop-toggle{border:1px solid transparent;border-radius:5px}.loop-toggle[aria-pressed="true"]{color:var(--accent);border-color:#654134;background:#32241f}
 </style>
 </head>
 <body>
@@ -38,6 +39,7 @@
 <symbol id="upload" viewBox="0 0 24 24"><path d="M12 16V4m-5 5 5-5 5 5M3 15v5h18v-5"/></symbol>
 <symbol id="play" viewBox="0 0 24 24"><path d="M7 4.5 20 12 7 19.5z"/></symbol>
 <symbol id="pause" viewBox="0 0 24 24"><path d="M6 5h4v14H6zm8 0h4v14h-4z"/></symbol>
+<symbol id="repeat" viewBox="0 0 24 24"><path d="m16 2 4 4-4 4M4 12V9a3 3 0 0 1 3-3h13M8 22l-4-4 4-4m12-2v3a3 3 0 0 1-3 3H4"/></symbol>
 <symbol id="rewind" viewBox="0 0 24 24"><path d="M5 6v12m13-12-9 6 9 6z"/></symbol>
 <symbol id="volume" viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4zm12 0c1.5 1.5 1.5 4.5 0 6m3-9c3.2 3.1 3.2 8.9 0 12"/></symbol>
 <symbol id="muted" viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4zm13 0 5 6m0-6-5 6"/></symbol>
@@ -52,7 +54,7 @@
 <section class="panel wave-panel"><div class="panel-head"><div class="section-title"><svg class="ico"><use href="#wave"/></svg><h2>波形モニター</h2></div><div class="legend"><span><i class="swatch"></i>入力</span><span><i class="swatch out"></i>出力</span></div></div>
 <div class="wave-inner"><div class="file-info"><svg class="ico"><use href="#music"/></svg><strong id="selectedName">—</strong><span id="demoChip" class="chip" hidden>DEMO</span></div>
 <div class="wave-screen"><canvas class="chart" id="waveCanvas" aria-label="全曲の入力波形と出力波形"></canvas><input type="range" min="0" max="1" value="0" step=".001" id="seek" aria-label="再生位置（秒）" title="クリックまたはドラッグで再生位置を変更"></div>
-<div class="transport"><button id="playButton" class="play" aria-label="再生"><svg class="ico"><use id="playIcon" href="#play"/></svg></button><button id="rewindButton" class="mini" aria-label="曲の先頭へ" title="曲の先頭へ"><svg class="ico"><use href="#rewind"/></svg></button><div class="counter"><b id="position">0:00.0</b> / <span id="duration">0:00.0</span></div><div class="monitor"><button id="mute" class="mini" aria-label="試聴音量をミュート" title="試聴音量"><svg class="ico"><use id="volumeIcon" href="#volume"/></svg></button><input id="monitorVol" class="slider" type="range" min="0" max="1" value="0.18" step=".01" aria-label="試聴音量（保存音量には影響しません）" title="試聴音量"></div></div></div>
+<div class="transport"><button id="playButton" class="play" aria-label="再生"><svg class="ico"><use id="playIcon" href="#play"/></svg></button><button id="rewindButton" class="mini" aria-label="曲の先頭へ" title="曲の先頭へ"><svg class="ico"><use href="#rewind"/></svg></button><button id="loopButton" class="mini loop-toggle" type="button" aria-label="1曲ループ" aria-pressed="false" title="1曲ループ"><svg class="ico"><use href="#repeat"/></svg></button><div class="counter"><b id="position">0:00.0</b> / <span id="duration">0:00.0</span></div><div class="monitor"><button id="mute" class="mini" aria-label="試聴音量をミュート" title="試聴音量"><svg class="ico"><use id="volumeIcon" href="#volume"/></svg></button><input id="monitorVol" class="slider" type="range" min="0" max="1" value="0.18" step=".01" aria-label="試聴音量（保存音量には影響しません）" title="試聴音量"></div></div></div>
 <div class="metrics"><div class="metric"><span>入力ピーク</span><strong id="inPeak">—</strong></div><div class="metric"><span>出力ピーク</span><strong id="outPeak">—</strong></div><div class="metric"><span>適用倍率</span><strong id="actualGain">—</strong></div></div></section>
 <div class="analysis"><section class="panel"><div class="panel-head"><div class="section-title"><svg class="ico"><use href="#scope"/></svg><h2>オシロスコープ</h2></div><div class="scope-controls" role="group" aria-label="オシロの横軸全体の表示幅"><input id="scopeValue" type="number" step="any" min="0.001" max="10000" value="20" inputmode="decimal" aria-label="オシロの表示幅" title="横軸全体の表示幅"><select id="scopeUnit" class="select" aria-label="オシロの時間単位"><option value="1">µs</option><option value="1000" selected>ms</option><option value="1000000">s</option></select></div></div><div class="small-pad"><div class="small-screen"><canvas id="oscCanvas" class="chart" aria-label="選択位置の出力波形、チャンネル1" aria-describedby="scopeNote"></canvas></div><div class="scope-zoom"><span>1 µs</span><input id="scopeZoom" class="slider" type="range" min="0" max="21" step="1" value="13" aria-label="オシロの表示幅プリセット" aria-valuetext="20 ms"><span>10 s</span></div><div id="scopeNote" class="scope-note"></div></div></section>
 <section class="panel spectrum"><div class="panel-head"><div class="section-title"><svg class="ico"><use href="#bars"/></svg><h2>FFT スペクトラム</h2></div><select class="select" id="fftSize" aria-label="FFTのサンプル数"><option>1024</option><option selected>2048</option><option>4096</option><option>8192</option></select></div><div class="small-pad"><div class="small-screen"><canvas id="fftCanvas" class="chart" aria-label="選択位置の出力周波数スペクトル、チャンネル1"></canvas></div></div></section></div>
@@ -168,8 +170,20 @@ function makeDemo(){
   }
   return buildTrack('Pulse Circuit.wav',buffer,true);
 }
+let looping=false;
 function currentTime() {
-  return playing && selected ? Math.min(selected.buffer.duration, Math.max(0,playContext.currentTime-playbackStart)) : offset;
+  if(!playing||!selected)return offset;
+  const elapsed=Math.max(0,playContext.currentTime-playbackStart),duration=selected.buffer.duration;
+  return looping?elapsed%duration:Math.min(duration,elapsed);
+}
+function toggleLoop(){
+  const position=currentTime();
+  looping=!looping;
+  byId('loopButton').setAttribute('aria-pressed',String(looping));
+  if(playing){
+    playbackStart=playContext.currentTime-position;
+    source.loop=looping;
+  }
 }
 function stopSource() {
   if(source){source.onended=null;try{source.stop();}catch{}source.disconnect();source=null;}
@@ -211,6 +225,7 @@ function startSource(t){
   if(!selected)return;
   const gain=sampleGain(selected);
   source=playContext.createBufferSource();source.buffer=previewBuffer(selected,gain);source.connect(boost);
+  source.loopStart=0;source.loopEnd=selected.buffer.duration;source.loop=looping;
   boost.gain.value=previewGain(gain);
   offset=clamp(t,0,selected.buffer.duration);playbackStart=playContext.currentTime-offset;
   const active=source;
@@ -228,7 +243,7 @@ async function togglePlayback(){
 function seekTo(t){
   if(!selected)return;
   const active=playing;offset=clamp(t,0,selected.buffer.duration);
-  if(active){if(offset<selected.buffer.duration)startSource(offset);else{stopSource();setPlayIcon();}}
+  if(active){if(offset<selected.buffer.duration)startSource(offset);else if(looping)startSource(0);else{stopSource();setPlayIcon();}}
   drawPosition();drawAnalysis();
 }
 function animate(now){
@@ -244,7 +259,7 @@ function updateTrackView(){
   byId('demoChip').hidden=!selected?.demo;
   byId('duration').textContent=timeText(selected?.buffer.duration||0,true);
   byId('seek').max=selected?.buffer.duration||1;
-  for(const id of ['playButton','rewindButton','seek'])byId(id).disabled=!selected;
+  for(const id of ['playButton','rewindButton','loopButton','seek'])byId(id).disabled=!selected;
   renderList();updateSettings();updateExport();
 }
 function renderList(){
@@ -625,6 +640,7 @@ scopeValue.onkeydown=e=>{if(e.key==='Enter')scopeValue.blur();};
 scopeUnit.onchange=()=>updateScopeControls(scopeValue.valueAsNumber*Number(scopeUnit.value));
 byId('scopeZoom').oninput=e=>updateScopeControls(scopePresets[Number(e.target.value)],true);
 byId('fftSize').onchange=drawAnalysis;
+byId('loopButton').onclick=toggleLoop;
 byId('playButton').onclick=togglePlayback;byId('rewindButton').onclick=()=>seekTo(0);
 const seek=byId('seek');
 seek.oninput=e=>seekTo(Number(e.target.value));
