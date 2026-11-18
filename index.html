@@ -25,6 +25,10 @@
 .scope-zoom input{flex:1;min-width:32px;height:4px;margin:5px 0}
 .scope-note{font-size:10px;line-height:1.4;color:var(--muted);margin-top:4px}
 .loop-toggle{border:1px solid transparent;border-radius:5px}.loop-toggle[aria-pressed="true"]{color:var(--accent);border-color:#654134;background:#32241f}
+.file-info{flex-wrap:wrap}.file-info strong{max-width:100%}.file-info .legend{margin-left:auto}
+.swatch.low{background:#fdac64}.swatch.mid{background:#59c6da}.swatch.high{background:#b49cff}
+.tempo-strip{display:flex;align-items:center;flex-wrap:wrap;gap:6px 12px;padding:9px 18px;border-top:1px solid var(--edge)}
+.tempo-strip b,.tempo-strip span{font-size:11px;color:var(--muted)}.tempo-strip output{color:#fdac64;font:600 14px var(--mono);font-variant-numeric:tabular-nums}
 </style>
 </head>
 <body>
@@ -51,13 +55,16 @@
 <div class="intro"><div><h1>音割れメーカー</h1><p>ゲインを上げて音を歪ませ、波形と周波数の変化をチェック。</p></div><button class="btn primary" id="export"><svg class="ico"><use href="#download"/></svg><span id="exportText">ZIPで一括保存</span></button></div>
 <div id="status" role="status" class="status" hidden></div>
 <div class="work"><div class="left">
-<section class="panel wave-panel"><div class="panel-head"><div class="section-title"><svg class="ico"><use href="#wave"/></svg><h2>波形モニター</h2></div><div class="legend"><span><i class="swatch"></i>入力</span><span><i class="swatch out"></i>出力</span></div></div>
-<div class="wave-inner"><div class="file-info"><svg class="ico"><use href="#music"/></svg><strong id="selectedName">—</strong><span id="demoChip" class="chip" hidden>DEMO</span></div>
+<section class="panel wave-panel"><div class="panel-head"><div class="section-title"><svg class="ico"><use href="#wave"/></svg><h2>波形モニター</h2></div><select id="waveMode" class="select" aria-label="波形の表示方式"><option value="bands">3バンド波形</option><option value="io">入出力波形</option></select></div>
+<div class="wave-inner"><div class="file-info"><svg class="ico"><use href="#music"/></svg><strong id="selectedName">—</strong><span id="demoChip" class="chip" hidden>DEMO</span>
+<div class="legend" id="ioLegend" hidden><span><i class="swatch"></i>入力</span><span><i class="swatch out"></i>出力</span></div>
+<div class="legend" id="bandLegend"><span><i class="swatch low"></i>低域</span><span><i class="swatch mid"></i>中域</span><span><i class="swatch high"></i>高域</span></div></div>
 <div class="wave-screen"><canvas class="chart" id="waveCanvas" aria-label="全曲の入力波形と出力波形"></canvas><input type="range" min="0" max="1" value="0" step=".001" id="seek" aria-label="再生位置（秒）" title="クリックまたはドラッグで再生位置を変更"></div>
 <div class="transport"><button id="playButton" class="play" aria-label="再生"><svg class="ico"><use id="playIcon" href="#play"/></svg></button><button id="rewindButton" class="mini" aria-label="曲の先頭へ" title="曲の先頭へ"><svg class="ico"><use href="#rewind"/></svg></button><button id="loopButton" class="mini loop-toggle" type="button" aria-label="1曲ループ" aria-pressed="false" title="1曲ループ"><svg class="ico"><use href="#repeat"/></svg></button><div class="counter"><b id="position">0:00.0</b> / <span id="duration">0:00.0</span></div><div class="monitor"><button id="mute" class="mini" aria-label="試聴音量をミュート" title="試聴音量"><svg class="ico"><use id="volumeIcon" href="#volume"/></svg></button><input id="monitorVol" class="slider" type="range" min="0" max="1" value="0.18" step=".01" aria-label="試聴音量（保存音量には影響しません）" title="試聴音量"></div></div></div>
+<div class="tempo-strip"><b>推定BPM</b><output id="tempoValue">—</output><span id="tempoDetail"></span></div>
 <div class="metrics"><div class="metric"><span>入力ピーク</span><strong id="inPeak">—</strong></div><div class="metric"><span>出力ピーク</span><strong id="outPeak">—</strong></div><div class="metric"><span>適用倍率</span><strong id="actualGain">—</strong></div></div></section>
 <div class="analysis"><section class="panel"><div class="panel-head"><div class="section-title"><svg class="ico"><use href="#scope"/></svg><h2>オシロスコープ</h2></div><div class="scope-controls" role="group" aria-label="オシロの横軸全体の表示幅"><input id="scopeValue" type="number" step="any" min="0.001" max="10000" value="20" inputmode="decimal" aria-label="オシロの表示幅" title="横軸全体の表示幅"><select id="scopeUnit" class="select" aria-label="オシロの時間単位"><option value="1">µs</option><option value="1000" selected>ms</option><option value="1000000">s</option></select></div></div><div class="small-pad"><div class="small-screen"><canvas id="oscCanvas" class="chart" aria-label="選択位置の出力波形、チャンネル1" aria-describedby="scopeNote"></canvas></div><div class="scope-zoom"><span>1 µs</span><input id="scopeZoom" class="slider" type="range" min="0" max="21" step="1" value="13" aria-label="オシロの表示幅プリセット" aria-valuetext="20 ms"><span>10 s</span></div><div id="scopeNote" class="scope-note"></div></div></section>
-<section class="panel spectrum"><div class="panel-head"><div class="section-title"><svg class="ico"><use href="#bars"/></svg><h2>FFT スペクトラム</h2></div><select class="select" id="fftSize" aria-label="FFTのサンプル数"><option>1024</option><option selected>2048</option><option>4096</option><option>8192</option></select></div><div class="small-pad"><div class="small-screen"><canvas id="fftCanvas" class="chart" aria-label="選択位置の出力周波数スペクトル、チャンネル1"></canvas></div></div></section></div>
+<section class="panel spectrum"><div class="panel-head"><div class="section-title"><svg class="ico"><use href="#bars"/></svg><h2>FFT スペクトラム</h2></div><select class="select" id="fftSize" aria-label="FFTのサンプル数"><option>1024</option><option>2048</option><option selected>4096</option><option>8192</option></select></div><div class="small-pad"><div class="small-screen"><canvas id="fftCanvas" class="chart" aria-label="出力スペクトル、20 Hzから20 kHzの70帯域"></canvas></div></div></section></div>
 </div><div class="right">
 <section class="panel gain-panel"><div class="panel-head"><div class="section-title"><svg class="ico"><use href="#gain"/></svg><h2>ゲイン設定</h2></div><span id="gainDb" class="db">+6.02 dB</span></div>
 <div class="gain-body"><div class="gain-readout"><label for="gainNumber">×</label><input id="gainNumber" aria-label="ゲイン倍率を直接入力" type="text" value="2.00" spellcheck="false" autocomplete="off" aria-describedby="gainHint" style="width:4.15ch"></div><div class="main-slider"><input id="gainSlider" class="slider" aria-label="ゲイン倍率スライダー" type="range" min=".5" max="10" step=".01" value="2"></div><div class="ends"><span>×0.5</span><span>×10</span></div><div class="input-hint"><span id="gainHint">×0 〜 ∞ ・ 指数表記可</span><button type="button" id="infiniteGain" aria-label="倍率を無限大に設定" aria-pressed="false">∞ に設定</button></div></div>
@@ -66,9 +73,270 @@
 <input type="file" id="files" accept="audio/*,.wav,.mp3,.m4a,.aac,.ogg,.opus,.flac,.aif,.aiff,.webm,.mp4" multiple hidden><button class="drop" id="drop"><svg class="ico"><use href="#upload"/></svg><span><b>音源をドロップ</b><small>またはクリックして複数選択</small></span></button>
 <ul id="tracks" class="tracks" aria-label="読み込んだ音源"></ul><div class="fmt"><span>出力形式</span><code>WAV</code><i></i><code>48 kHz</code><i></i><code>16 bit PCM</code></div></section>
 </div></div>
-<div class="foot"><span><svg class="ico"><use href="#scope"/></svg><b id="analysisChannel">解析チャンネル　CH 1</b></span><span>FFT　dBFS · Hann窓</span></div>
+<div class="foot"><span><svg class="ico"><use href="#scope"/></svg><b id="analysisChannel">オシロ　CH 1</b></span><span>FFT　70 bands · Blackman窓</span></div>
 </main>
-<dialog class="help-box" id="guide"><h2>使い方</h2><ol><li>音源をドロップするか、クリックして選択します。最初のデモ音源は自分の音源を読み込むと入れ替わります。</li><li>ゲインは小数、指数表記（例：1e1000）、∞で指定できます。「∞ に設定」を押すと、正負のサンプルがそれぞれ最大振幅になり、ゼロは無音のままです。波形をクリックして好きな位置から試聴できます。スピーカー横のスライダーは試聴音量専用です。</li><li>「音割れ寸前で止める」をオンにすると、各曲の最大サンプルピークに応じて曲全体の倍率を抑えます。</li><li>「ZIPで一括保存」で、リストの各曲を現在の設定でWAVに書き出します。</li></ol><p>波形モニターは全チャンネルの振幅範囲、オシロとFFTは先頭チャンネルの出力を表示します。オシロの横軸は全幅1 µs〜10 s。スライダーで1・2・5刻みに切り替えるか、数値と単位で任意の幅を指定できます。48 kHzのサンプル間隔は約20.83 µsです。拡大時の点は実サンプル、点を結ぶ線は直線補間です。読み込み形式はブラウザのデコーダーに依存します。</p><form method="dialog"><button class="btn">閉じる</button></form></dialog>
+<dialog class="help-box" id="guide"><h2>使い方</h2><ol><li>音源をドロップするか、クリックして選択します。最初のデモ音源は自分の音源を読み込むと入れ替わります。</li><li>ゲインは小数、指数表記（例：1e1000）、∞で指定できます。「∞ に設定」を押すと、正負のサンプルがそれぞれ最大振幅になり、ゼロは無音のままです。波形をクリックして好きな位置から試聴できます。スピーカー横のスライダーは試聴音量専用です。</li><li>「音割れ寸前で止める」をオンにすると、各曲の最大サンプルピークに応じて曲全体の倍率を抑えます。</li><li>「ZIPで一括保存」で、リストの各曲を現在の設定でWAVに書き出します。</li></ol><p>3バンド波形は元音源を低域（250 Hz未満）、中域、高域（4 kHz以上）に色分けします。入出力波形へ切り替えるとゲインによる歪みを比較できます。BPMは元音源の発音間隔・自己相関・周期グリッドから推定します。FFTはクリップ処理後のモノラルミックスを20 Hz〜20 kHzの70帯域で表示し、一時停止中もシーク位置を確認できます。オシロは先頭チャンネルの出力です。オシロの横軸は全幅1 µs〜10 s。スライダーで1・2・5刻みに切り替えるか、数値と単位で任意の幅を指定できます。48 kHzのサンプル間隔は約20.83 µsです。拡大時の点は実サンプル、点を結ぶ線は直線補間です。読み込み形式はブラウザのデコーダーに依存します。</p><form method="dialog"><button class="btn">閉じる</button></form></dialog>
+<!-- DT-Cue tempo, waveform analysis and spectrum visualization
+https://github.com/Xenoah/dt-cue_precision-media-player/tree/a6361e08a6c3644773ed5770544e175a7bee5820
+MIT License
+
+Copyright (c) 2026 dt-cue contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+-->
+<script id="dtAnalysis" type="text/plain">
+// Three independent periodicity estimators; all processing stays in the worker.
+// Scores are heuristic rhythm strengths, not probabilities of a correct tempo.
+const TEMPO_ENGINES = [
+  {id:'interval', label:'発音間隔', short:'IOI'},
+  {id:'correlation', label:'自己相関', short:'ACF'},
+  {id:'comb', label:'周期グリッド', short:'COMB'}
+];
+const MIN=40, MAX=240, STEP=.25, SIZE=(MAX-MIN)/STEP+1;
+const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
+const similar=(a,b)=>Math.abs(a-b)<Math.max(.7,Math.min(a,b)*.012);
+
+function average(data,radius){
+  const out=new Float32Array(data.length);let sum=0,end=0;
+  for(let i=0;i<data.length;i++){
+    while(end<Math.min(data.length,i+radius+1))sum+=data[end++];
+    if(i>radius)sum-=data[i-radius-1];
+    out[i]=sum/(end-Math.max(0,i-radius));
+  }
+  return out;
+}
+function features(input,rate){
+  const smooth=average(input,Math.max(1,Math.round(rate*.01)));
+  const local=average(smooth,Math.round(rate*.5));
+  let energy=0,variation=0,maximum=0;
+  for(let i=0;i<input.length;i++){
+    energy+=smooth[i]*smooth[i];variation+=(smooth[i]-local[i])**2;maximum=Math.max(maximum,local[i]);
+  }
+  // Relative modulation, so quiet tracks get the same treatment as loud ones.
+  if(!energy||variation/energy<.0004)return null;
+  const pulse=new Float32Array(input.length),onset=new Float32Array(input.length);
+  const distance=Math.max(1,Math.round(rate*.015));
+  for(let i=distance;i<input.length;i++){
+    const scale=Math.max(local[i],maximum*.005,1e-20);
+    pulse[i]=clamp((smooth[i]-local[i])/scale,0,4);
+    onset[i]=clamp((smooth[i]-smooth[i-distance])/scale,0,4);
+  }
+  return {pulse,onset};
+}
+function eventsFrom(onset,rate){
+  const threshold=average(onset,Math.round(rate*.2)),events=[];
+  const gap=Math.round(rate*.1);
+  for(let i=1;i<onset.length-1;i++){
+    if(onset[i]<.02||onset[i]<threshold[i]*1.3||onset[i]<onset[i-1]||onset[i]<onset[i+1])continue;
+    const event={index:i,strength:onset[i]};
+    if(events.length&&i-events.at(-1).index<gap){if(event.strength>events.at(-1).strength)events[events.length-1]=event;}
+    else events.push(event);
+  }
+  return events;
+}
+function intervalScores(onset,rate){
+  const scores=new Float64Array(SIZE),events=eventsFrom(onset,rate);
+  if(events.length<5)return {scores,quality:0};
+  for(let i=0;i<events.length;i++)for(let j=i+1;j<Math.min(events.length,i+10);j++){
+    const seconds=(events[j].index-events[i].index)/rate;if(seconds>4)break;
+    for(let beats=1;beats<=4;beats++){
+      const bpm=60*beats/seconds;if(bpm<MIN||bpm>MAX)continue;
+      const weight=Math.sqrt(events[i].strength*events[j].strength)/Math.sqrt(j-i)/Math.sqrt(beats);
+      const center=(bpm-MIN)/STEP,spread=Math.max(2,bpm*.004/STEP);
+      for(let k=Math.max(0,Math.floor(center-spread*3));k<=Math.min(SIZE-1,Math.ceil(center+spread*3));k++)scores[k]+=weight*Math.exp(-.5*((k-center)/spread)**2);
+    }
+  }
+  const max=Math.max(...scores),mean=scores.reduce((a,b)=>a+b,0)/SIZE;
+  return {scores,quality:max?clamp((max/Math.max(mean,1e-20)-2)/6):0};
+}
+function correlationScores(pulse,rate){
+  const scores=new Float64Array(SIZE),signal=Float32Array.from(pulse);
+  const mean=signal.reduce((a,b)=>a+b,0)/signal.length;
+  for(let i=0;i<signal.length;i++)signal[i]-=mean;
+  const maxLag=Math.ceil(rate*60/MIN)+2,acf=new Float64Array(maxLag+1);
+  for(let lag=Math.floor(rate*60/MAX)-1;lag<=maxLag;lag++){
+    let xy=0,xx=0,yy=0;
+    for(let i=lag;i<signal.length;i++){const x=signal[i],y=signal[i-lag];xy+=x*y;xx+=x*x;yy+=y*y;}
+    acf[lag]=xy/Math.sqrt(xx*yy||1);
+  }
+  for(let k=0;k<SIZE;k++){
+    const lag=rate*60/(MIN+k*STEP),i=Math.floor(lag),fraction=lag-i;
+    // A mild short-lag preference resolves submultiples of a clear repeated beat.
+    scores[k]=Math.max(0,acf[i]*(1-fraction)+acf[i+1]*fraction)*Math.pow((MIN+k*STEP)/120,.12);
+  }
+  return {scores,quality:clamp((Math.max(...acf)-.12)/.7)};
+}
+function combScores(onset,rate){
+  const scores=new Float64Array(SIZE),bins=new Float64Array(96);
+  let total=0;for(const x of onset)total+=x;
+  if(total<1e-10)return {scores,quality:0};
+  // A single transient matches every phase grid. Require energy in several
+  // separated time bins before treating phase concentration as periodicity.
+  const blocks=new Float64Array(Math.ceil(onset.length/(rate*.5)));
+  for(let i=0;i<onset.length;i++)blocks[Math.floor(i/(rate*.5))]+=onset[i];
+  const effective=total*total/blocks.reduce((sum,x)=>sum+x*x,0);
+  if(effective<3)return {scores,quality:0};
+  let bestContrast=0;
+  for(let k=0;k<SIZE;k++){
+    const bpm=MIN+k*STEP,period=rate*60/bpm;bins.fill(0);
+    for(let i=0;i<onset.length;i++){
+      const phase=(i%period)/period*bins.length,index=Math.floor(phase),fraction=phase-index;
+      bins[index]+=onset[i]*(1-fraction);bins[(index+1)%bins.length]+=onset[i]*fraction;
+    }
+    const radius=Math.max(1,Math.round(.035*rate/period*bins.length));
+    let best=0;
+    for(let i=0;i<bins.length;i++){
+      let sum=0;for(let d=-radius;d<=radius;d++)sum+=bins[(i+d+bins.length)%bins.length];
+      best=Math.max(best,sum);
+    }
+    const baseline=(radius*2+1)/bins.length;
+    const contrast=clamp((best/total-baseline)/(1-baseline));
+    // Penalise a grid with twice as many empty beats or half the observed hits.
+    scores[k]=contrast/Math.sqrt(bpm/120);
+    bestContrast=Math.max(bestContrast,contrast);
+  }
+  return {scores,quality:clamp((bestContrast-.12)/.6)};
+}
+function peaks(scores,quality){
+  const best=Math.max(...scores),found=[];
+  if(!best||quality<.18)return found;
+  for(let i=0;i<SIZE;i++)if(scores[i]>best*.4&&(!i||scores[i]>=scores[i-1])&&(i===SIZE-1||scores[i]>=scores[i+1])){
+    found.push({bpm:Math.round((MIN+i*STEP)*10)/10,score:scores[i]/best,confidence:Math.min(.95,quality*scores[i]/best)});
+  }
+  found.sort((a,b)=>b.score-a.score);
+  return found.filter((c,i)=>!found.slice(0,i).some(p=>similar(c.bpm,p.bpm))).slice(0,5);
+}
+function offsetFor(bpm,windows,rate){
+  const period=60/bpm,bins=new Float64Array(128);
+  for(const w of windows)for(const e of w.events){
+    const phase=((w.start+e.index)/rate%period)/period*bins.length;
+    bins[Math.round(phase)%bins.length]+=e.strength;
+  }
+  let best=0,index=0;
+  for(let i=0;i<bins.length;i++){
+    let sum=0;for(let d=-3;d<=3;d++)sum+=bins[(i+d+bins.length)%bins.length];
+    if(sum>best){best=sum;index=i;}
+  }
+  let weighted=0,weight=0;
+  for(let d=-3;d<=3;d++){const v=bins[(index+d+bins.length)%bins.length];weighted+=(index+d)*v;weight+=v;}
+  return weight?((weighted/weight+bins.length)%bins.length)/bins.length*period:0;
+}
+
+function combineTempos(engines){
+  const groups=[];
+  for(const engine of engines)for(const [rank,c] of engine.candidates.entries()){
+    if(c.confidence<.18)continue;
+    let group=groups.find(g=>similar(g.bpm,c.bpm));
+    if(!group){group={bpm:c.bpm,weight:0,sum:0,votes:new Map(),members:[]};groups.push(group);}
+    const weight=c.confidence/(1+rank*.55);
+    if(group.votes.has(engine.id))continue;
+    group.votes.set(engine.id,{weight,primary:rank===0});group.members.push({bpm:c.bpm,weight});group.weight+=weight;group.sum+=c.bpm*weight;group.bpm=group.sum/group.weight;
+  }
+  return groups.map(g=>{
+    // A weighted median lets two agreeing detectors resist one shifted peak.
+    let sum=0;const median=g.members.sort((a,b)=>a.bpm-b.bpm).find(c=>(sum+=c.weight)>=g.weight/2);
+    return {bpm:median.bpm,engines:[...g.votes.keys()],support:g.votes.size,primarySupport:[...g.votes.values()].filter(v=>v.primary).length,
+      confidence:Math.min(.95,g.weight/3),score:g.weight*(1+(g.votes.size-1)*.2)};
+  })
+    .sort((a,b)=>b.score-a.score).slice(0,5);
+}
+
+function estimateTempo(envelope,envelopeRate,progress=()=>{}){
+  const engines=TEMPO_ENGINES.map(e=>({...e,candidates:[],reason:''}));
+  const empty=reason=>({bpm:null,confidence:0,beatOffset:0,candidates:[],tempoCandidates:[],engines:engines.map(e=>({...e,reason:e.reason||reason})),reason});
+  if(!Number.isFinite(envelopeRate)||envelopeRate<=0||envelope.length<envelopeRate*4)return empty('4秒以上の音声が必要です');
+  // Evenly distributed windows prevent a silent intro from deciding the result,
+  // while bounding the cost for long tracks. Window starts retain absolute phase.
+  const size=Math.min(envelope.length,Math.round(envelopeRate*24));
+  const count=Math.min(8,Math.max(1,Math.ceil(envelope.length/size))),windows=[];
+  for(let i=0;i<count;i++){
+    const start=count===1?0:Math.round(i*(envelope.length-size)/(count-1));
+    const f=features(envelope.subarray(start,start+size),envelopeRate);
+    if(f)windows.push({...f,start,events:eventsFrom(f.onset,envelopeRate)});
+  }
+  if(!windows.length)return empty('周期的な音量変化を検出できません');
+  const detectors=[intervalScores,correlationScores,combScores];
+  for(let e=0;e<engines.length;e++){
+    const combined=new Float64Array(SIZE);let quality=0,accepted=0;
+    for(const w of windows){
+      const result=detectors[e](e===1?w.pulse:w.onset,envelopeRate),max=Math.max(...result.scores);
+      if(result.quality>=.18&&max){for(let k=0;k<SIZE;k++)combined[k]+=result.scores[k]/max*result.quality;quality+=result.quality;accepted++;}
+    }
+    engines[e].candidates=peaks(combined,accepted?quality/accepted:0);
+    if(!engines[e].candidates.length)engines[e].reason='安定した周期を検出できません';
+    progress((e+1)/engines.length);
+  }
+  const tempoCandidates=combineTempos(engines);
+  if(!tempoCandidates.length)return empty('安定したBPMを検出できません。TAPまたは手動入力を使ってください');
+  for(const c of [...tempoCandidates,...engines.flatMap(e=>e.candidates)])c.beatOffset=offsetFor(c.bpm,windows,envelopeRate);
+  const best=tempoCandidates[0];
+  return {bpm:best.bpm,confidence:best.confidence,beatOffset:best.beatOffset,
+    candidates:tempoCandidates.map(c=>c.bpm),tempoCandidates,engines,reason:''};
+}
+
+// First-order complementary crossovers: low <250 Hz, mid 250–4000 Hz, high >4000 Hz.
+// Per-channel energy aggregation avoids phase cancellation in stereo material.
+function analyzePCM(channels, sampleRate, progress = () => {}) {
+  const length = channels[0]?.length || 0;
+  if (!length || !sampleRate) throw new Error('Empty PCM');
+  const bucketSize = Math.max(32, Math.ceil(length / 24000));
+  const count = Math.ceil(length / bucketSize);
+  const low = new Float32Array(count), mid = new Float32Array(count), high = new Float32Array(count);
+  const peak = new Float32Array(count);
+  const hop = Math.max(1, Math.round(sampleRate / 200));
+  const envelope = new Float32Array(Math.ceil(length / hop));
+  const aLow = 1 - Math.exp(-2 * Math.PI * 250 / sampleRate);
+  const aHigh = 1 - Math.exp(-2 * Math.PI * 4000 / sampleRate);
+  let totalSquare = 0, maxPeak = 0;
+  for (let c = 0; c < channels.length; c++) {
+    const data = channels[c];
+    let lp = 0, hp = 0;
+    for (let i = 0; i < length; i++) {
+      const s = data[i] || 0;
+      lp += aLow * (s - lp); hp += aHigh * (s - hp);
+      const m = hp - lp, h = s - hp, b = Math.floor(i / bucketSize);
+      low[b] += lp * lp; mid[b] += m * m; high[b] += h * h;
+      peak[b] = Math.max(peak[b], Math.abs(s));
+      totalSquare += s * s; maxPeak = Math.max(maxPeak, Math.abs(s));
+      envelope[Math.floor(i / hop)] += .7 * lp * lp + .3 * s * s;
+    }
+    progress((c + 1) / channels.length * .8);
+  }
+  for (let i = 0; i < count; i++) {
+    const n = Math.min(bucketSize, length - i * bucketSize) * channels.length;
+    low[i] = Math.sqrt(low[i] / n); mid[i] = Math.sqrt(mid[i] / n); high[i] = Math.sqrt(high[i] / n);
+  }
+  for (let i = 0; i < envelope.length; i++) envelope[i] = Math.sqrt(envelope[i] / (hop * channels.length));
+  const tempo = estimateTempo(envelope, sampleRate / hop, value=>progress(.8+value*.2));
+  progress(1);
+  return {low, mid, high, peak, bucketSize, sampleRate, duration:length / sampleRate,
+    channels:channels.length, samplePeak:maxPeak, rms:Math.sqrt(totalSquare / (length * channels.length)), ...tempo};
+}
+
+
+self.onmessage = ({data}) => {
+  try {
+    const result = analyzePCM(data.channels, data.sampleRate, progress=>self.postMessage({progress}));
+    self.postMessage({result}, ['low','mid','high','peak'].map(k=>result[k].buffer));
+  } catch(error) { self.postMessage({error:error.message}); }
+};
+</script>
 <script>
 'use strict';
 const byId = id => document.getElementById(id);
@@ -86,6 +354,48 @@ const kind = {gain:2, label:'2.00', gainDb:20*Math.log10(2), protect:false};
 const FULL_CLIP_GAIN = 2 ** 149;
 const PREVIEW_SCALE = 2 ** 96;
 let prescaledPreview = null;
+let analyser, spectrumBins, analysisWorker, analysisUrl;
+const bandColors=['#fdac64','#59c6da','#b49cff'];
+function updateTempo(track, progress=0) {
+  const analysis=track?.analysis;
+  byId('tempoValue').textContent=analysis?.bpm ? String(analysis.bpm) : '—';
+  let detail='';
+  if(track?.analysisError)detail=track.analysisError;
+  else if(analysis?.bpm)detail=analysis.engines.map(e=>e.short+' '+(e.candidates[0]?.bpm??'—')).join('  /  ');
+  else if(analysis)detail=analysis.reason.split('。')[0];
+  else if(track)detail='解析中 '+Math.round(progress*100)+'%';
+  byId('tempoDetail').textContent=detail;
+}
+function analyzeSelected(track) {
+  if(analysisWorker){analysisWorker.terminate();analysisWorker=null;}
+  updateTempo(track);
+  if(!track||track.analysis)return;
+  function finish(error,result){
+    if(track!==selected)return;
+    analysisWorker?.terminate();analysisWorker=null;
+    track.analysis=result;track.analysisError=error;
+    updateTempo(track);drawWave();
+  }
+  try{
+    track.analysisError='';
+    analysisUrl ||= URL.createObjectURL(new Blob([byId('dtAnalysis').textContent],{type:'text/javascript'}));
+    const worker=new Worker(analysisUrl);analysisWorker=worker;
+    worker.onmessage=({data})=>{
+      if(worker!==analysisWorker)return;
+      if('progress' in data)updateTempo(track,data.progress);
+      else finish(data.error?'解析に失敗しました':null,data.result);
+    };
+    worker.onerror=()=>{if(worker===analysisWorker)finish('解析に失敗しました',null);};
+    const buffer=track.buffer, channels=Array.from({length:buffer.numberOfChannels},(_,c)=>buffer.getChannelData(c).slice());
+    worker.postMessage({channels,sampleRate:buffer.sampleRate},channels.map(data=>data.buffer));
+  }catch{finish('解析に必要なメモリまたはWorkerを利用できません',null);}
+}
+function refreshWaveMode(){
+  const bands=byId('waveMode').value==='bands';
+  byId('ioLegend').hidden=bands;byId('bandLegend').hidden=!bands;
+  byId('waveCanvas').setAttribute('aria-label',bands?'全曲の入力3バンド波形':'全曲の入力波形と出力波形');
+  drawWave();
+}
 const library = [];
 let selected = null, loading = 0, saving = false, sequence = Promise.resolve();
 let playContext, source, boost, shaper, monitor, playbackStart = 0, offset = 0, playing = false, playIntent = 0;
@@ -203,7 +513,9 @@ function initAudio(){
   playContext=new Context({sampleRate:RATE});
   boost=playContext.createGain();shaper=playContext.createWaveShaper();monitor=playContext.createGain();
   shaper.curve=new Float32Array([-1,0,1]);shaper.oversample='none';
-  boost.connect(shaper);shaper.connect(monitor);monitor.connect(playContext.destination);
+  analyser=playContext.createAnalyser();
+  analyser.fftSize=Number(byId('fftSize').value);analyser.smoothingTimeConstant=.75;
+  boost.connect(shaper);shaper.connect(analyser);shaper.connect(monitor);monitor.connect(playContext.destination);
   monitor.gain.value=Number(byId('monitorVol').value);
 }
 // For extreme gains, prescale once in JS. This brings even subnormal input
@@ -252,7 +564,7 @@ function animate(now){
   frame=requestAnimationFrame(animate);
 }
 function selectTrack(track){
-  pausePlayback();prescaledPreview=null;offset=0;selected=track;updateTrackView();
+  pausePlayback();prescaledPreview=null;offset=0;selected=track;analyzeSelected(track);updateTrackView();
 }
 function updateTrackView(){
   byId('selectedName').textContent=selected?.name||'音源を追加してください';
@@ -345,11 +657,33 @@ function label(c,s,x,y,align='left'){
   c.textAlign=align;c.fillStyle=colors.text;c.fillText(s,x,y);
 }
 function waveBounds(w){return {l:26,r:w-11};}
+function drawBands(c,d,l,width,mid,amp){
+  if(!d)return;
+  if(d.bpm){
+    const beat=60/d.bpm,step=beat*Math.max(1,Math.ceil(d.duration/beat/150));
+    for(let t=d.beatOffset;t<d.duration;t+=step){
+      const x=l+width*t/d.duration;line(c,x,mid-amp,x,mid+amp,'#374437');
+    }
+  }
+  for(let x=0;x<width;x++){
+    const from=Math.floor(x/width*d.duration*d.sampleRate/d.bucketSize);
+    const to=Math.min(d.peak.length,Math.max(from+1,Math.ceil((x+1)/width*d.duration*d.sampleRate/d.bucketSize)));
+    let low=0,middle=0,high=0,peak=0;
+    for(let i=from;i<to;i++){
+      low=Math.max(low,d.low[i]);middle=Math.max(middle,d.mid[i]);high=Math.max(high,d.high[i]);peak=Math.max(peak,d.peak[i]);
+    }
+    const scale=Math.min(1,peak**.65)*amp/(low+middle+high||1);
+    const a=low*scale,b=middle*scale,h=high*scale,px=l+x;
+    c.fillStyle=bandColors[0];c.fillRect(px,mid-a,1,2*a);
+    c.fillStyle=bandColors[1];c.fillRect(px,mid-a-b,1,b);c.fillRect(px,mid+a,1,b);
+    c.fillStyle=bandColors[2];c.fillRect(px,mid-a-b-h,1,h);c.fillRect(px,mid+a+b,1,h);
+  }
+}
 function drawWave(){
   const s=surface('waveCanvas');if(!s)return;
   const {ctx:c,w,h}=s,{l,r}=waveBounds(w),top=12,bottom=h-23,mid=(top+bottom)/2,amp=(bottom-top)/2;
   for(let j=0;j<5;j++){const y=top+j*amp/2;line(c,l,y,r,y,j===2?'#424448':colors.grid);}
-  label(c,'+1',l-5,top+4,'right');label(c,'0',l-5,mid+3,'right');label(c,'−1',l-5,bottom,'right');
+  if(byId('waveMode').value==='io'){label(c,'+1',l-5,top+4,'right');label(c,'0',l-5,mid+3,'right');label(c,'−1',l-5,bottom,'right');}
   const divisions=w>510?6:4;
   const duration=selected?.buffer.duration||0;
   for(let j=0;j<=divisions;j++){
@@ -362,6 +696,7 @@ function drawWave(){
   if(!selected)return;
   const {low,high}=selected, gain=sampleGain(selected);
   const width=Math.max(1,Math.floor(r-l));
+  if(byId('waveMode').value==='bands'){drawBands(c,selected.analysis,l,width,mid,amp);return;}
   const tops=new Float32Array(width),bottoms=new Float32Array(width);
   for(let x=0;x<width;x++){
     const start=Math.floor(x*low.length/width),end=Math.min(low.length,Math.max(start+1,Math.ceil((x+1)*low.length/width)));
@@ -462,16 +797,21 @@ function drawScope(data,position,gain){
   }
 }
 let fftCache;
-function fftFrame(data,start,gain,n){
+// Web Audio speaker downmix for a paused cursor frame, after clipping each channel.
+function fftFrame(buffer,start,gain,n){
+  const data=Array.from({length:buffer.numberOfChannels},(_,ch)=>buffer.getChannelData(ch));
+  const weights=({2:[.5,.5],4:[.25,.25,.25,.25],6:[Math.SQRT1_2,Math.SQRT1_2,1,0,.5,.5]})[data.length]||[1];
   if(fftCache?.n!==n){
     const window=new Float64Array(n), cos=new Float64Array(n/2), sin=new Float64Array(n/2);
-    for(let i=0;i<n;i++)window[i]=.5-.5*Math.cos(2*Math.PI*i/n);
+    for(let i=0;i<n;i++)window[i]=.42-.5*Math.cos(2*Math.PI*i/n)+.08*Math.cos(4*Math.PI*i/n);
     for(let i=0;i<n/2;i++){cos[i]=Math.cos(-2*Math.PI*i/n);sin[i]=Math.sin(-2*Math.PI*i/n);}
     fftCache={n,window,cos,sin,re:new Float64Array(n),im:new Float64Array(n),mag:new Float64Array(n/2+1)};
   }
   const {window:win,cos,sin,re,im,mag}=fftCache;im.fill(0);
   for(let i=0,j=0;i<n;i++){
-    re[j]=clip((data[start+i]||0)*gain)*win[i];
+    let sum=0;
+    for(let ch=0;ch<weights.length;ch++)sum+=weights[ch]*clip((data[ch][start+i]||0)*gain);
+    re[j]=sum*win[i];
     let bit=n>>1;while(bit&&(j&bit)){j^=bit;bit>>=1;}j^=bit;
   }
   for(let size=2;size<=n;size*=2){
@@ -483,26 +823,30 @@ function fftFrame(data,start,gain,n){
       }
     }
   }
-  for(let i=0;i<mag.length;i++)mag[i]=Math.hypot(re[i],im[i])*(i===0||i===n/2?2:4)/n;
+  for(let i=0;i<mag.length;i++)mag[i]=db(Math.hypot(re[i],im[i])/n);
   return mag;
 }
 function drawSpectrum(data,start,gain){
   const s=surface('fftCanvas');if(!s)return;
   const {ctx:c,w,h}=s,l=29,r=w-9,top=11,bottom=h-23;
   const fmin=20,fmax=20000,span=Math.log(fmax/fmin),fx=f=>l+(r-l)*Math.log(f/fmin)/span;
-  for(let j=0;j<4;j++){const y=top+j*(bottom-top)/3;line(c,l,y,r,y,colors.grid);label(c,j?'−'+24*j:'0',l-4,y+3,'right');}
+  for(let j=0;j<=4;j++){const y=top+j*(bottom-top)/4;line(c,l,y,r,y,colors.grid);label(c,j?'−'+25*j:'0',l-4,y+3,'right');}
   for(const f of [20,100,1000,10000,20000]){const x=fx(f);line(c,x,top,x,bottom,colors.grid);
     if(f!==10000||w>400)label(c,f>=1000?(f/1000)+'k'+(f===20000?' Hz':''):String(f),x,h-6,f===20?'left':f===20000?'right':'center');}
   if(!data)return;
-  const n=Number(byId('fftSize').value),mags=fftFrame(data,start,gain,n);
-  const bars=Math.max(24,Math.floor((r-l)/4.2)),pitch=(r-l)/bars;
-  const grad=c.createLinearGradient(0,top,0,bottom);grad.addColorStop(0,'#a6f0ce');grad.addColorStop(1,'#4f937d');c.fillStyle=grad;
-  function interp(k){const i=Math.floor(k);return mags[i]+(mags[Math.min(i+1,mags.length-1)]-mags[i])*(k-i);}
-  for(let j=0;j<bars;j++){
-    const a=fmin*Math.exp(span*j/bars)*n/RATE,b=fmin*Math.exp(span*(j+1)/bars)*n/RATE;
-    let v=Math.max(interp(a),interp(b));for(let k=Math.ceil(a);k<=Math.floor(b);k++)v=Math.max(v,mags[k]);
-    const height=clamp((db(v)+72)/72,0,1)*(bottom-top);
-    c.fillRect(l+j*pitch,bottom-height,Math.max(1,pitch-1.3),height);
+  const n=Number(byId('fftSize').value),pitch=(r-l)/70;
+  let bins;
+  if(playing&&analyser){
+    if(spectrumBins?.length!==analyser.frequencyBinCount)spectrumBins=new Float32Array(analyser.frequencyBinCount);
+    analyser.getFloatFrequencyData(spectrumBins);bins=spectrumBins;
+  }else bins=fftFrame(selected.buffer,start,gain,n);
+  for(let j=0;j<70;j++){
+    const hz=fmin*1000**(j/70),end=fmin*1000**((j+1)/70),center=Math.sqrt(hz*end);
+    const first=Math.max(1,Math.floor(hz*n/RATE)),last=Math.min(bins.length-1,Math.ceil(end*n/RATE));
+    let value=-100;for(let k=first;k<=last;k++)value=Math.max(value,bins[k]);
+    const height=clamp((value+100)/100,0,1)*(bottom-top);
+    c.fillStyle=bandColors[center<250?0:center<4000?1:2];
+    c.fillRect(l+j*pitch,bottom-height,Math.max(1,pitch-2),height);
   }
 }
 function drawAnalysis(){
@@ -639,7 +983,8 @@ scopeValue.onblur=()=>{
 scopeValue.onkeydown=e=>{if(e.key==='Enter')scopeValue.blur();};
 scopeUnit.onchange=()=>updateScopeControls(scopeValue.valueAsNumber*Number(scopeUnit.value));
 byId('scopeZoom').oninput=e=>updateScopeControls(scopePresets[Number(e.target.value)],true);
-byId('fftSize').onchange=drawAnalysis;
+byId('waveMode').onchange=refreshWaveMode;refreshWaveMode();
+byId('fftSize').onchange=()=>{if(analyser)analyser.fftSize=Number(byId('fftSize').value);drawAnalysis();};
 byId('loopButton').onclick=toggleLoop;
 byId('playButton').onclick=togglePlayback;byId('rewindButton').onclick=()=>seekTo(0);
 const seek=byId('seek');
