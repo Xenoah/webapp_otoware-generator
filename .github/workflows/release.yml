@@ -26,18 +26,3 @@ jobs:
           if gh release view "$tag" >/dev/null 2>&1; then exit 0; fi
           notes="ブラウザで動く音割れメーカー。ゲイン調整（∞対応）、ピーク制限、波形・オシロ・FFT表示、複数音源のWAV一括ZIP保存に対応します。添付の index.html をダウンロードして直接開けます。"
           gh release create "$tag" index.html --target "$GITHUB_SHA" --title "音割れメーカー $tag" --notes "$notes"
-
-  pages:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pages: write
-    steps:
-      - name: Enable publishing from main if needed
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          endpoint="repos/$GITHUB_REPOSITORY/pages"
-          if gh api "$endpoint" --jq .html_url; then exit 0; fi
-          gh api --method POST "$endpoint" -f 'source[branch]=main' -f 'source[path]=/' --jq .html_url
