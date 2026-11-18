@@ -29,6 +29,16 @@
 .swatch.low{background:#fdac64}.swatch.mid{background:#59c6da}.swatch.high{background:#b49cff}
 .tempo-strip{display:flex;align-items:center;flex-wrap:wrap;gap:6px 12px;padding:9px 18px;border-top:1px solid var(--edge)}
 .tempo-strip b,.tempo-strip span{font-size:11px;color:var(--muted)}.tempo-strip output{color:#fdac64;font:600 14px var(--mono);font-variant-numeric:tabular-nums}
+.fx-strip{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center}.fx-indicator{font:10px var(--mono);color:#adb8b5;border:1px solid #49524e;border-radius:4px;padding:3px 6px}
+body.fx-hit .fx-indicator{color:#ffd5b0;border-color:#d58a50;background:#38291e}
+#fxGlass{position:fixed;inset:0;z-index:6;pointer-events:none;display:none}
+.fx-slice{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;display:none}
+@media (prefers-reduced-motion:no-preference){
+  body.fx-motion #fxGlass{display:block;opacity:var(--fx-level);background:linear-gradient(to bottom,transparent var(--fx-line),#16bcb524 var(--fx-line),transparent calc(var(--fx-line) + 1.2%),transparent 82%,#e86b9220 82.2%,transparent 83%)}
+  body.fx-motion .chart{transform:scale(var(--fx-zoom));filter:url(#fxRGB)}
+  body.fx-motion .fx-slice{display:block;opacity:var(--fx-level)}
+  body.fx-motion .intro h1,body.fx-motion .brand{text-shadow:var(--fx-shift) 0 #66ccd1,calc(-1 * var(--fx-shift)) 0 #e87891}
+}
 </style>
 </head>
 <body>
@@ -49,7 +59,11 @@
 <symbol id="muted" viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4zm13 0 5 6m0-6-5 6"/></symbol>
 <symbol id="close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
 <symbol id="help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 0 1 5 .4c0 2-2.5 2.2-2.5 4M12 16.5h.01"/></symbol>
-</defs></svg>
+<filter id="fxRGB" x="-5%" y="-5%" width="110%" height="110%" color-interpolation-filters="sRGB">
+<feColorMatrix in="SourceGraphic" type="matrix" values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0"/><feOffset id="fxRed" dx="0" result="red"/>
+<feColorMatrix in="SourceGraphic" type="matrix" values="0 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 1 0"/><feOffset id="fxCyan" dx="0" result="cyan"/>
+<feComposite in="red" in2="cyan" operator="arithmetic" k2="1" k3="1"/>
+</filter></defs></svg><div id="fxGlass" aria-hidden="true"></div>
 <header class="top"><div class="container"><div class="brand"><svg viewBox="0 0 36 36" aria-hidden="true"><rect x="1" y="1" width="34" height="34" rx="8" fill="#ff7952"/><path d="M6 21h4l3-12h4l-2 18h4l4-17h4l-1 10h4" stroke="#241913" fill="none" stroke-width="2.65" stroke-linejoin="round" stroke-linecap="round"/></svg>Clipforge</div><div class="top-right"><span class="local"><i class="led"></i>ローカル処理</span><button class="help" id="helpButton" aria-label="使い方"><svg class="ico"><use href="#help"/></svg><span>使い方</span></button></div></div></header>
 <main class="container">
 <div class="intro"><div><h1>音割れメーカー</h1><p>ゲインを上げて音を歪ませ、波形と周波数の変化をチェック。</p></div><button class="btn primary" id="export"><svg class="ico"><use href="#download"/></svg><span id="exportText">ZIPで一括保存</span></button></div>
@@ -68,14 +82,15 @@
 </div><div class="right">
 <section class="panel gain-panel"><div class="panel-head"><div class="section-title"><svg class="ico"><use href="#gain"/></svg><h2>ゲイン設定</h2></div><span id="gainDb" class="db">+6.02 dB</span></div>
 <div class="gain-body"><div class="gain-readout"><label for="gainNumber">×</label><input id="gainNumber" aria-label="ゲイン倍率を直接入力" type="text" value="2.00" spellcheck="false" autocomplete="off" aria-describedby="gainHint" style="width:4.15ch"></div><div class="main-slider"><input id="gainSlider" class="slider" aria-label="ゲイン倍率スライダー" type="range" min=".5" max="10" step=".01" value="2"></div><div class="ends"><span>×0.5</span><span>×10</span></div><div class="input-hint"><span id="gainHint">×0 〜 ∞ ・ 指数表記可</span><button type="button" id="infiniteGain" aria-label="倍率を無限大に設定" aria-pressed="false">∞ に設定</button></div></div>
-<label class="switch-line"><span><b>音割れ寸前で止める</b><small>曲ごとのピークを −0.1 dBFS 以下に制限</small></span><input type="checkbox" id="protect"><span class="switch" aria-hidden="true"></span></label></section>
+<label class="switch-line"><span><b>音割れ寸前で止める</b><small>曲ごとのピークを −0.1 dBFS 以下に制限</small></span><input type="checkbox" id="protect"><span class="switch" aria-hidden="true"></span></label>
+<label class="switch-line"><span><span class="fx-strip"><b>エフェクトモード</b><span class="fx-indicator" id="fxIndicator" aria-hidden="true" hidden>待機中</span></span><small>再生中の音割れに合わせて画面を歪ませる</small></span><input type="checkbox" id="fxEnabled"><span class="switch" aria-hidden="true"></span></label></section>
 <section class="panel file-panel"><div class="panel-head"><div class="section-title"><svg class="ico"><use href="#stack"/></svg><h2>音源リスト</h2></div><span class="count" id="fileCount">0</span></div>
 <input type="file" id="files" accept="audio/*,.wav,.mp3,.m4a,.aac,.ogg,.opus,.flac,.aif,.aiff,.webm,.mp4" multiple hidden><button class="drop" id="drop"><svg class="ico"><use href="#upload"/></svg><span><b>音源をドロップ</b><small>またはクリックして複数選択</small></span></button>
 <ul id="tracks" class="tracks" aria-label="読み込んだ音源"></ul><div class="fmt"><span>出力形式</span><code>WAV</code><i></i><code>48 kHz</code><i></i><code>16 bit PCM</code></div></section>
 </div></div>
 <div class="foot"><span><svg class="ico"><use href="#scope"/></svg><b id="analysisChannel">オシロ　CH 1</b></span><span>FFT　70 bands · Blackman窓</span></div>
 </main>
-<dialog class="help-box" id="guide"><h2>使い方</h2><ol><li>音源をドロップするか、クリックして選択します。最初のデモ音源は自分の音源を読み込むと入れ替わります。</li><li>ゲインは小数、指数表記（例：1e1000）、∞で指定できます。「∞ に設定」を押すと、正負のサンプルがそれぞれ最大振幅になり、ゼロは無音のままです。波形をクリックして好きな位置から試聴できます。スピーカー横のスライダーは試聴音量専用です。</li><li>「音割れ寸前で止める」をオンにすると、各曲の最大サンプルピークに応じて曲全体の倍率を抑えます。</li><li>「ZIPで一括保存」で、リストの各曲を現在の設定でWAVに書き出します。</li></ol><p>3バンド波形は元音源を低域（250 Hz未満）、中域、高域（4 kHz以上）に色分けします。入出力波形へ切り替えるとゲインによる歪みを比較できます。BPMは元音源の発音間隔・自己相関・周期グリッドから推定します。FFTはクリップ処理後のモノラルミックスを20 Hz〜20 kHzの70帯域で表示し、一時停止中もシーク位置を確認できます。オシロは先頭チャンネルの出力です。オシロの横軸は全幅1 µs〜10 s。スライダーで1・2・5刻みに切り替えるか、数値と単位で任意の幅を指定できます。48 kHzのサンプル間隔は約20.83 µsです。拡大時の点は実サンプル、点を結ぶ線は直線補間です。読み込み形式はブラウザのデコーダーに依存します。</p><form method="dialog"><button class="btn">閉じる</button></form></dialog>
+<dialog class="help-box" id="guide"><h2>使い方</h2><ol><li>音源をドロップするか、クリックして選択します。最初のデモ音源は自分の音源を読み込むと入れ替わります。</li><li>ゲインは小数、指数表記（例：1e1000）、∞で指定できます。「∞ に設定」を押すと、正負のサンプルがそれぞれ最大振幅になり、ゼロは無音のままです。波形をクリックして好きな位置から試聴できます。スピーカー横のスライダーは試聴音量専用です。</li><li>「音割れ寸前で止める」をオンにすると、各曲の最大サンプルピークに応じて曲全体の倍率を抑えます。</li><li>「エフェクトモード」で、クリップした箇所にグリッチ・色ずれ・ズームがかかります。端末で視差効果を減らす設定を有効にすると、CLIP表示だけで確認できます。</li><li>「ZIPで一括保存」で、リストの各曲を現在の設定でWAVに書き出します。</li></ol><p>3バンド波形は元音源を低域（250 Hz未満）、中域、高域（4 kHz以上）に色分けします。入出力波形へ切り替えるとゲインによる歪みを比較できます。BPMは元音源の発音間隔・自己相関・周期グリッドから推定します。FFTはクリップ処理後のモノラルミックスを20 Hz〜20 kHzの70帯域で表示し、一時停止中もシーク位置を確認できます。オシロは先頭チャンネルの出力です。オシロの横軸は全幅1 µs〜10 s。スライダーで1・2・5刻みに切り替えるか、数値と単位で任意の幅を指定できます。48 kHzのサンプル間隔は約20.83 µsです。拡大時の点は実サンプル、点を結ぶ線は直線補間です。読み込み形式はブラウザのデコーダーに依存します。</p><form method="dialog"><button class="btn">閉じる</button></form></dialog>
 <!-- DT-Cue tempo, waveform analysis and spectrum visualization
 https://github.com/Xenoah/dt-cue_precision-media-player/tree/a6361e08a6c3644773ed5770544e175a7bee5820
 MIT License
@@ -481,6 +496,93 @@ function makeDemo(){
   return buildTrack('Pulse Circuit.wav',buffer,true);
 }
 let looping=false;
+// Use absolute source frames so a loop boundary or a sub-frame transient is preserved.
+const effect={enabled:false,frame:0,level:0,lastHit:-Infinity,lastPulse:-Infinity,phase:0,tailTimer:0};
+const reduceMotion=matchMedia('(prefers-reduced-motion: reduce)');
+const effectLayers=[];
+function clearEffect(){
+  clearTimeout(effect.tailTimer);
+  effect.level=0;effect.lastHit=-Infinity;effect.lastPulse=-Infinity;
+  document.body.classList.remove('fx-hit','fx-motion');
+  byId('fxIndicator').textContent='待機中';
+}
+function resetEffect(){
+  effect.frame=playing?Math.max(0,Math.floor((playContext.currentTime-playbackStart)*RATE)):0;
+  clearEffect();
+}
+function clippedStrength(track,start,end,gain,repeat){
+  if(!track||gain*track.peak<=1||end<=start)return 0;
+  const {buffer}=track,length=buffer.length;
+  // At most one full pass is needed even if a very short sound loops many times.
+  end=repeat?end:Math.min(length,end);
+  start=Math.max(0,start,end-length);
+  if(end<=start)return 0;
+  let peak=0,clipped=0;
+  for(let ch=0;ch<buffer.numberOfChannels;ch++){
+    const data=buffer.getChannelData(ch);
+    let cursor=start;
+    while(cursor<end){
+      const first=cursor%length, count=Math.min(end-cursor,length-first);
+      for(let i=first;i<first+count;i++){
+        const value=Math.abs(data[i]);if(value*gain>1){clipped++;peak=Math.max(peak,value);}
+      }
+      cursor+=count;
+    }
+  }
+  if(!clipped)return 0;
+  const density=clipped/((end-start)*buffer.numberOfChannels);
+  return Math.min(1,.32+.24*Math.log2(peak*gain)+.6*Math.sqrt(density));
+}
+function paintTears(){
+  if(!effectLayers.length){
+    for(const id of ['waveCanvas','oscCanvas','fftCanvas']){
+      const chart=byId(id),layer=document.createElement('canvas');
+      layer.className='fx-slice';layer.setAttribute('aria-hidden','true');chart.after(layer);
+      effectLayers.push({chart,layer,ctx:layer.getContext('2d')});
+    }
+  }
+  for(const {chart,layer,ctx} of effectLayers){
+    const w=chart.width,h=chart.height;
+    if(layer.width!==w||layer.height!==h){layer.width=w;layer.height=h;}
+    ctx.clearRect(0,0,w,h);
+    for(let j=0;j<2;j++){
+      const y=Math.floor(h*(.14+((effect.phase*37+j*47)%70)/100));
+      const height=Math.max(1,Math.round(h*(j?.035:.08)));
+      const dx=Math.round((j?-1:1)*w*.026*effect.level);
+      ctx.fillStyle='#101113';ctx.fillRect(0,y,w,height);
+      ctx.drawImage(chart,0,y,w,height,dx,y,w,height);
+    }
+  }
+}
+function tickEffect(now,atEnd=false){
+  if(!effect.enabled||!playing||!selected)return;
+  const end=atEnd?selected.buffer.length:Math.max(0,Math.floor((playContext.currentTime-playbackStart)*RATE));
+  // Drop stale audio from background tabs instead of replaying old visual events.
+  const start=Math.max(effect.frame,end-Math.ceil(RATE*.12));effect.frame=end;
+  const strength=kind.protect?0:clippedStrength(selected,start,end,sampleGain(selected),looping);
+  if(strength){
+    effect.lastHit=now;
+    if(now-effect.lastPulse>=190){effect.phase=(effect.phase+1)%100;effect.lastPulse=now;}
+    effect.level=Math.max(strength,effect.level*.92);
+  }
+  const elapsed=now-effect.lastHit,active=elapsed<185;
+  if(!active){
+    if(effect.level)clearEffect();
+    return;
+  }
+  document.body.classList.add('fx-hit');byId('fxIndicator').textContent='CLIP';
+  if(reduceMotion.matches){document.body.classList.remove('fx-motion');return;}
+  const level=effect.level*Math.max(0,1-elapsed/185);
+  const shift=(effect.phase%2?1:-1)*3*level,style=document.body.style;
+  style.setProperty('--fx-level',level.toFixed(3));style.setProperty('--fx-zoom',(1+.052*level).toFixed(4));
+  style.setProperty('--fx-shift',shift.toFixed(2)+'px');style.setProperty('--fx-line',(12+effect.phase*29%73)+'%');
+  byId('fxRed').setAttribute('dx',shift.toFixed(2));byId('fxCyan').setAttribute('dx',(-shift).toFixed(2));
+  document.body.classList.add('fx-motion');paintTears();
+}
+byId('fxEnabled').onchange=e=>{
+  effect.enabled=e.target.checked;byId('fxIndicator').hidden=!effect.enabled;resetEffect();
+};
+reduceMotion.addEventListener('change',resetEffect);
 function currentTime() {
   if(!playing||!selected)return offset;
   const elapsed=Math.max(0,playContext.currentTime-playbackStart),duration=selected.buffer.duration;
@@ -492,12 +594,16 @@ function toggleLoop(){
   byId('loopButton').setAttribute('aria-pressed',String(looping));
   if(playing){
     playbackStart=playContext.currentTime-position;
-    source.loop=looping;
+    source.loop=looping;resetEffect();
   }
 }
-function stopSource() {
+function stopSource(naturalEnd=false) {
   if(source){source.onended=null;try{source.stop();}catch{}source.disconnect();source=null;}
   playing=false;cancelAnimationFrame(frame);
+  if(naturalEnd&&effect.level){
+    const remaining=Math.max(0,185-(performance.now()-effect.lastHit));
+    effect.tailTimer=setTimeout(clearEffect,remaining);
+  }else clearEffect();
 }
 function setPlayIcon(){
   byId('playIcon').setAttribute('href',playing?'#pause':'#play');
@@ -541,8 +647,12 @@ function startSource(t){
   boost.gain.value=previewGain(gain);
   offset=clamp(t,0,selected.buffer.duration);playbackStart=playContext.currentTime-offset;
   const active=source;
-  source.onended=()=>{if(active!==source)return;offset=selected.buffer.duration;stopSource();setPlayIcon();drawPosition();drawAnalysis();};
-  source.start(0,offset);playing=true;setPlayIcon();frame=requestAnimationFrame(animate);
+  source.onended=()=>{
+    if(active!==source)return;
+    tickEffect(performance.now(),true);
+    offset=selected.buffer.duration;stopSource(true);setPlayIcon();drawPosition();drawAnalysis();
+  };
+  source.start(0,offset);playing=true;resetEffect();setPlayIcon();frame=requestAnimationFrame(animate);
 }
 async function togglePlayback(){
   if(!selected)return;
@@ -554,13 +664,14 @@ async function togglePlayback(){
 }
 function seekTo(t){
   if(!selected)return;
+  if(effect.enabled)resetEffect();
   const active=playing;offset=clamp(t,0,selected.buffer.duration);
   if(active){if(offset<selected.buffer.duration)startSource(offset);else if(looping)startSource(0);else{stopSource();setPlayIcon();}}
   drawPosition();drawAnalysis();
 }
 function animate(now){
   if(!playing)return;
-  if(now-lastAnalysis>=33){drawPosition();drawAnalysis();lastAnalysis=now;}
+  if(now-lastAnalysis>=33){drawPosition();drawAnalysis();tickEffect(now);lastAnalysis=now;}
   frame=requestAnimationFrame(animate);
 }
 function selectTrack(track){
@@ -591,6 +702,7 @@ function renderList(){
   }
 }
 function updateSettings(){
+  if(effect.enabled)resetEffect();
   const n=kind.gain,slider=byId('gainSlider');
   slider.value=clamp(n,.5,10);
   slider.style.setProperty('--fill',((Number(slider.value)-.5)/9.5*100)+'%');
